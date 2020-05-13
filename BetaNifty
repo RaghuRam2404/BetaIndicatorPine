@@ -1,0 +1,37 @@
+//@version=2
+study(title='BETA', overlay=false)
+//  ||------------------------------------------------------------------------------------------------------||
+//  ||---   BETA as described here:                                                                         ||
+//  ||---   http://www.investopedia.com/articles/financial-theory/09/calculating-beta.asp                   ||
+//  ||------------------------------------------------------------------------------------------------------||
+
+length = input(252)
+smooth = input(1)
+
+//  ||------------------------------------------------------------------------------------------------------||
+//  ||---   Covariance Function as described here:                                                          ||
+//  ||---   http://www.investopedia.com/articles/financial-theory/11/calculating-covariance.asp             ||
+f_return_percent(_src)=>change(_src) / _src[1] * 100
+//  ||------------------------------------------------------------------------------------------------------||
+f_covariance(_src_a, _src_b, _length)=>
+    _a = f_return_percent(_src_a)
+    _b = f_return_percent(_src_b)
+    _a_avg_return = sma(_a, _length)
+    _b_avg_return = sma(_b, _length)
+    _sum = 0
+    if (_length >= 0 and _length <= 252)
+        for _i = _length to 0
+            _sum := _sum + ((_a[_i] - _a_avg_return) * (_b[_i] - _b_avg_return))
+    _return_covariance = _sum / (_length - 1)
+//  ||------------------------------------------------------------------------------------------------------||
+//  ||------------------------------------------------------------------------------------------------------||
+
+threshold = input(1.2)
+instrument = ema(close, smooth)
+benchmark = security(input('NIFTY'), 'D', ema(close, smooth))
+//plot(series=benchmark)
+beta = f_covariance(instrument, benchmark, length) / variance(benchmark, length)
+
+plot(series=beta*1000000*.32385, title='β', color=black, transp=0)
+hline(0)
+hline(1.1, title='Threshold', color=green, linewidth=2)
